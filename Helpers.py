@@ -1,10 +1,17 @@
 import pygame
 
-def write(text, fontsize, colour):
+def write(surface, text, fontsize, colour, position):
 	myfont = pygame.font.SysFont("None", fontsize)
 	mytext = myfont.render(text, True, colour)
 	mytext = mytext.convert_alpha()
-	return mytext
+	surface.blit(mytext, position)
 
-def draw_ship(pos_x, pos_y, surface):
-	pygame.draw.rect(surface, (0, 0, 0), (pos_x, pos_y, 50, 50))
+def color(colorname):
+	colors = {
+		"white": (255, 255, 255),
+		"black": (0, 0, 0),
+		"red": (255, 0, 0),
+		"yellow": (175, 175, 50),
+		"green": (0, 255, 0)
+	}
+	return colors[colorname]

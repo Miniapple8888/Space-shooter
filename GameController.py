@@ -1,29 +1,26 @@
 import pygame
 import os
 from Helpers import write
-from Helpers import draw_ship
+from Helpers import color
 from Laser import Laser
+from Player import Player
 from Enemy import Enemy
 from LaserEnemy import LaserEnemy
 
-class App():
+class Game():
 
 	score = 0
-	health = 1000
 	level = 1
 	enemies = []
 	lasers = []
 	lasersEnemy = []
 	gameover = False
+	won = False
 	playing = False
-	ship_dx = 150
-	ship_dy = 150
-	new_level = True
-	levels = [0, 5, 10, 15]
-	canShoot = True
-	start_time = 0
+	levels = [0, 5, 10, 15, 20, 25]
 
 	def __init__(self, width, height, fps):
+
 		# initialize mixer to avoid sound lag
 		pygame.mixer.pre_init(44100, -16, 2, 2048)
 		pygame.init()
@@ -31,10 +28,14 @@ class App():
 		self.height = height
 		self.fps = fps
 		self.clock = pygame.time.Clock()
-		self.ship_pos_x = (self.width-50)/2
-		self.ship_pos_y = self.height - 50
+		self._display_surf = pygame.display.set_mode((self.width, self.height), pygame.HWSURFACE | pygame.DOUBLEBUF)
+		self._running = True
+		self.load()
+		pygame.display.set_icon(self.playerShip)
 
+	# Loads assets
 	def load(self):
+
 		folder = "assets"
 		try:
 			# load sprites
@@ -50,7 +51,8 @@ class App():
 				"hit": pygame.mixer.Sound(os.path.join(folder, "hit.wav")),
 				"explosion": pygame.mixer.Sound(os.path.join(folder, "explosion.wav")),
 				"level_up": pygame.mixer.Sound(os.path.join(folder, "level_up.wav")),
-				"gameover": pygame.mixer.Sound(os.path.join(folder, "gameover.wav"))
+				"gameover": pygame.mixer.Sound(os.path.join(folder, "gameover.wav")),
+				"won": pygame.mixer.Sound(os.path.join(folder, "won.wav"))
 			}
 			# plays music endlessly
 			pygame.mixer.music.play(-1)
@@ -58,87 +60,95 @@ class App():
 			msg = "Unfortunately we could load one of the files."
 			raise Exception(UserWarning, msg)
 
+	# fills the screen with blackness
+	def clear_screen(self):
+		self.background.fill(color("black"))
+
+	# Display game stats
+	def display_game_stats(self):
+		# Current level
+		write(self.background, "LEVEL: %s" % (self.level), 24, color("white"), (0, 0))
+		# Current Health
+		write(self.background, "HEALTH: %s" % (self.player.health), 24, color("white"), (200, 0))
+		# Current score
+		write(self.background, "SCORE: %s" % (self.score), 24, color("white"), (400, 0))
+
+	# level up: spawns new wave of enemy
+	def level_up(self):
+		self.level += 1
+		# if player has completed all levels, wins
+		if self.level > len(self.levels) - 1:
+			self.won = True
+			# Sound effect won
+			self.sfx['won'].play()
+		else:
+			# spawns a certain number of enemy according to the level
+			for x in range(0, self.levels[self.level]):
+				enemy = Enemy(self.background, self.enemyShip)
+				self.enemies.append(enemy)
+			# sound effect level up
+			self.sfx['level_up'].play()
+
+	# self-explanatory
+	def starting_screen(self):
+
+		self.background = pygame.Surface(self._display_surf.get_size())
+		self.clear_screen()
+		self.background = self.background.convert()
+		self.player = Player(self.background, self.playerShip)
+		write(self.background, "SPACE SHOOTERS", 54, color("white"), (155, 100))
+		write(self.background, "PRESS ENTER TO START", 32, color("white"), (190, 200))
+
+	# Game mode
 	def play(self):
 
 		# Repainting screen
-		self.background.fill((0, 0, 0))
+		self.clear_screen()
 
 		# draw ship
-		draw_ship(self.ship_pos_x, self.ship_pos_y, self.background)
-		self.background.blit(self.playerShip, (self.ship_pos_x, self.ship_pos_y))
+		#draw_ship(self.ship_pos_x, self.ship_pos_y, self.background, self.playerShip)
+		self.player.render()
+
 		# Display game stats
-		# Current level
-		self.background.blit(write("LEVEL: %s" % (self.level), 24, (255, 255, 255)), (0, 0))
-		# Current Health
-		self.background.blit(write("HEALTH: %s" % (self.health), 24, (255, 255, 255)), (200, 0))
-		# Current score
-		self.background.blit(write("SCORE: %s" % (self.score), 24, (255, 255, 255)), (400, 0))
+		self.display_game_stats()
 
-		# Countdown before starting the round
-
-
-		# Events with Health
-		# If health player == 0
-		if self.health <= 0:
-			# ship explode
-			# sound effect explosion
-			# Gameover screen
+		# Event player dies
+		if self.player.health <= 0:
 			self.gameover = True
 			# sound effect gameover
 			self.sfx['gameover'].play()
-		# If health enemy == 0
-		# enemy explode
-		# sound effect explosion
-		# score goes up
 
 		# Events with user input
 		# if pressed keys is left
 		if self.pressedkeys[pygame.K_LEFT]:
-			# check boundaries before moving
-			if self.ship_pos_x > 1:
-				# move to the left
-				self.ship_pos_x -= self.ship_dx * self.seconds
+			self.player.move_left(self.seconds)
 		# if pressed keys is right
 		if self.pressedkeys[pygame.K_RIGHT]:
-			# check boundaries before moving
-			if self.ship_pos_x < (self.width - 10 - 50):
-				# move to the right
-				self.ship_pos_x += self.ship_dx * self.seconds
+			self.player.move_right(self.seconds)
 		# if pressed keys is down
 		if self.pressedkeys[pygame.K_DOWN]:
-			# check boundaries before moving
-			if self.ship_pos_y < (self.height - 10 - 50):
-				# move down
-				self.ship_pos_y += self.ship_dy * self.seconds
+			self.player.move_down(self.seconds)
 		# if pressed keys is up
 		if self.pressedkeys[pygame.K_UP]:
-			# check boundaries before moving
-			if self.ship_pos_y > (self.height - 350):
-				# move up
-				self.ship_pos_y -= self.ship_dy * self.seconds
+			self.player.move_up(self.seconds)
 		# if pressed keys is space
 		if self.pressedkeys[pygame.K_SPACE]:
-			# fire event: fire sound is played
-			# a laser is spawned
-			# should be a delay when the laser is spawned
-			if self.canShoot == True:
-				laser = Laser(self.ship_pos_x, self.ship_pos_y, self.background)
+			# when delay is done, player can shoot
+			if self.player.can_shoot() == True:
+				# laser is spawned
+				laser = Laser(self.player.pos_x, self.player.pos_y, self.background)
 				self.lasers.append(laser)
-				self.start_time = pygame.time.get_ticks()
-				self.canShoot = False
+				# sound effect laser
 				self.sfx['laser'].play()
 
-		if self.canShoot == False and pygame.time.get_ticks() - self.start_time >= 500:
-			self.canShoot = True
-			self.start_time = 0
-
-		# updates laser movement from player
+		# updates laser 
 		for laser in self.lasers:
-			bounds = laser.draw_laser(self.background, self.seconds)
+			bounds = laser.update(self.seconds)
 			if bounds is False:
+				# deletes laser from game once it is out of the screen
 				self.lasers.remove(laser)
 			else:
-				# a collision happens once
+				# laser hits one of the enemies
 				hit = laser.hit(self.enemies)
 				if hit:
 					# laser is deleted
@@ -148,94 +158,73 @@ class App():
 					# sound effect hit
 					self.sfx['hit'].play()
 
-		# updates laser movement from player
-		for laser in self.lasersEnemy:
-			bounds = laser.draw_laser(self.background, self.seconds)
+		# updates enemy laser
+		for laserEnemy in self.lasersEnemy:
+			bounds = laserEnemy.update(self.seconds)
 			if bounds is False:
-				self.lasersEnemy.remove(laser)
+				# deletes laser from game once it is out of the screen
+				self.lasersEnemy.remove(laserEnemy)
 			else:
-				# a collision happens once
-				hit = laser.hit(self.ship_pos_x, self.ship_pos_y)
+				# laser hits the player
+				hit = laserEnemy.hit(self.player.pos_x, self.player.pos_y)
 				if hit:
 					# laser is deleted
-					self.lasersEnemy.remove(laser)
+					self.lasersEnemy.remove(laserEnemy)
 					# health player goes down
-					self.health -= 25
+					self.player.health -= 25
 					# sound effect hit
 					self.sfx['hit'].play()
-		# Events with collision
-		# if a laser collides with player
-		# Health player goes down
-		# sound effect damage
-		# laser destroyed
-		# if a laser collides with enemy
-		# Health enemy goes down
-		# sound effect damage
-		# laser destroyed
-		# if a laser goes out of bound
-		# laser destroyed
 
-		# spawns a certain number of enemy according to the level
-		if self.new_level:
-			for x in range(0, self.levels[self.level]):
-				enemy = Enemy(self.background)
-				self.enemies.append(enemy)
-			self.new_level = False
-			# level up sound effect
-			self.sfx['level_up'].play()
-
-		# updates movement enemy
+		# updates enemy
 		for enemy in self.enemies:
-			enemy.draw_enemy(self.background, self.seconds)
-			self.background.blit(self.enemyShip, (enemy.enemy_pos_x, enemy.enemy_pos_y))
+			enemy.update(self.seconds)
 			# enemy dies at zero HP
 			if enemy.health <= 0:
+				# enemy is deleted
 				self.enemies.remove(enemy)
 				self.score += 50
 				# sound effect explosion
 				self.sfx['explosion'].play()
 			# if enemy can shoot, shoot
 			if enemy.can_shoot():
-				laserEnemy = LaserEnemy(enemy.enemy_pos_x, enemy.enemy_pos_y, self.background)
+				laserEnemy = LaserEnemy(enemy, self.background)
 				self.lasersEnemy.append(laserEnemy)
 
-		# spawns new wave when all enemies die
+		# when all enemies die, level up!
 		if not self.enemies:
-			self.new_level = True
-			self.level += 1
+			self.level_up()
 
+	# resets all game values
 	def reset(self):
 		self.score = 0
-		self.health = 1000
 		self.level = 1
 		self.enemies = []
 		self.lasers = []
 		self.lasersEnemy = []
 		self.gameover = False
-		self.ship_dx = 150
-		self.ship_dy = 150
-		self.new_level = True
-		self.canShoot = True
-		self.start_time = 0
+		self.won = False
+		self.player = Player(self.background, self.playerShip)
 
+	def game_over(self):
+		# Repainting screen
+		self.clear_screen()
+		write(self.background, "GAMEOVER!", 54, color("red"), (200, 100))
+		write(self.background, "SCORE: %s" % (self.score), 32, color("white"), (235, 200))
+		write(self.background, "PRESS ENTER TO PLAY AGAIN!", 32, color("white"), (150, 250))
+		self.player = []
+
+	def winning_screen(self):
+		# Repainting screen
+		self.clear_screen()
+		write(self.background, "YOU WON!", 54, color("green"), (210, 100))
+		write(self.background, "SCORE: %s" % (self.score), 32, color("white"), (235, 200))
+		write(self.background, "PRESS ENTER TO PLAY AGAIN!", 32, color("white"), (150, 250))
+		self.player = []
+
+	# Game execution
 	def run(self):
 
-		self._display_surf = pygame.display.set_mode((self.width, self.height), pygame.HWSURFACE | pygame.DOUBLEBUF)
-		self._running = True
-
-		# load all assets
-		self.load()
-
-		# black background
-		self.background = pygame.Surface(self._display_surf.get_size())
-		self.background.fill((0, 0, 0))
-		self.background = self.background.convert()
-		# draw ship
-		draw_ship(self.ship_pos_x, self.ship_pos_y, self.background)
-		self.background.blit(self.playerShip, (self.ship_pos_x, self.ship_pos_y))
-		# Starting screen
-		self.background.blit(write("SPACE SHOOTERS", 54, (255, 255, 255)), (155, 100))
-		self.background.blit(write("PRESS ENTER TO START", 32, (255, 255, 255)), (190, 200))
+		self.starting_screen()
 
 		# while game is running
 		while self._running:
@@ -250,23 +239,23 @@ class App():
 				elif event.type == pygame.K_ESCAPE:
 					self._running = False
 
+			# get user input
 			self.pressedkeys = pygame.key.get_pressed()
 			
-			if self.playing is True and self.gameover == False:
-				# enter game mode
+			# Enter game mode if user presses enter and game over is false
+			if self.playing is True and self.gameover == False and self.won == False:
 				self.play()
 			else:
 				if self.pressedkeys[pygame.K_RETURN]:
 					self.playing = True
-					# reset values
 					self.reset()
 
 			if self.gameover is True:
-				# Repainting screen
-				self.background.fill((0, 0, 0))
-				self.background.blit(write("GAMEOVER!", 54, (255, 0, 0)), (200, 100))
-				self.background.blit(write("SCORE: %s" % (self.score), 32, (255, 255, 255)), (235, 200))
-				self.background.blit(write("PRESS ENTER TO PLAY AGAIN!", 32, (255, 255, 255)), (150, 250))
+				self.game_over()
+			elif self.won is True:
+				self.winning_screen()
+			
+			# Renders game
 			self._display_surf.blit(self.background, (0, 0))
 			pygame.display.set_caption("FPS: %s" % (self.clock.get_fps()))
 			pygame.display.update()

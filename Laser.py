@@ -1,35 +1,44 @@
 import pygame
-
+from Helpers import color
 
 class Laser():
 
 	width = 5
 	height = 35
-	laser_dy = 100
+	dy = 100
 
-	def __init__(self, pos_x, pos_y, surface):
-		self.laser_pos_x = pos_x + 20
-		self.laser_pos_y = pos_y - self.height
-		pygame.draw.rect(surface, (175, 175, 50), (self.laser_pos_x, self.laser_pos_y, self.width, self.height))
+	# Spawns new laser
+	def __init__(self, ship_pos_x, ship_pos_y, surface):
+		self.pos_x = ship_pos_x + 20
+		self.pos_y = ship_pos_y - self.height
+		self.surface = surface
+		self.render()
 
-	def draw_laser(self, surface, seconds):
+	def render(self):
+		pygame.draw.rect(self.surface, color("yellow"), (self.pos_x, self.pos_y, self.width, self.height))
+
+	# updates movement of laser
+	# return False if out of bounds
+	def update(self, seconds):
 		# first check boundaries
-		if self.laser_pos_y > -10:
+		if self.pos_y > -10:
 			# laser can move
-			self.laser_pos_y -= self.laser_dy * seconds
-			pygame.draw.rect(surface, (175, 175, 50), (self.laser_pos_x, self.laser_pos_y, self.width, self.height))
+			self.pos_y -= self.dy * seconds
+			self.render()
 			return True
 		else:
 			# It's out of bounds
 			return False
 
+	# Detects collision with the enemy
+	# Returns the enemy if collision and False otherwise
 	def hit(self, enemies):
 		# if same height as enemy
-		if self.laser_pos_y <= 100:
+		if self.pos_y <= 100:
 			# loop through enemies
 			for enemy in enemies:
 				# if it hits an enemy
-				if (self.laser_pos_x >= enemy.enemy_pos_x) and (self.laser_pos_x <= enemy.enemy_pos_x + enemy.width):
+				if (self.pos_x >= enemy.pos_x) and (self.pos_x <= enemy.pos_x + enemy.width):
 					return enemy
 		else:
 			return False
