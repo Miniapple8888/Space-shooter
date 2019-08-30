@@ -1,5 +1,5 @@
-from GameController import App
+from GameController import Game
 
 if __name__ == "__main__":
-	theApp = App(640, 480, 60)
-	theApp.run()
+	game = Game(640, 480, 60)
+	game.run()
