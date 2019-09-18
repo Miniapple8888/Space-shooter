@@ -1,6 +1,11 @@
 # Space Shooter Game
 
-A 2d space shooter game made with Pygame for educational purposes. This is not the final product. It is still under work. This is a demo. Controls are arrow keys to move and Spacebar to shoot.
+A 2d space shooter game made with Pygame for educational purposes. Controls are arrow keys to move and Spacebar to shoot.
+
+## Different Versions
+
+Two folders have been created to separate the corrected version and uncorrected one where the student is going to work on.
+The exercises are briefly described in comments of `# TODO`. 
 
 ## Play
 
