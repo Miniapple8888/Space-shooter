@@ -18,8 +18,8 @@ def playgame(game):
 		# sound effect gameover
 		game.sfx['gameover'].play()
 
-	# TODO add game over when time runs out in game, Limit Time is 1000
-	if game.seconds <= 1000:
+	# TODO add game over when time runs out in game, Limit Time is 30
+	if game.playtime >= 30:
 		game.gameover = True
 		# sound effect gameover
 		game.sfx['gameover'].play()

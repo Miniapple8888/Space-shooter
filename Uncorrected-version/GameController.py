@@ -17,6 +17,7 @@ class Game():
 	won = False
 	playing = False
 	levels = [0, 5, 10, 15, 20, 25]
+	playtime = 0
 
 	def __init__(self, width, height, fps):
 
@@ -106,6 +107,7 @@ class Game():
 
 	# resets all game values
 	def reset(self):
+		self.playtime = 0
 		self.score = 0
 		self.level = 1
 		self.enemies = []
@@ -141,6 +143,7 @@ class Game():
 
 			milliseconds = self.clock.tick(self.fps)
 			self.seconds = milliseconds / 1000.0
+			self.playtime += self.seconds
 
 			# Quit event
 			for event in pygame.event.get():

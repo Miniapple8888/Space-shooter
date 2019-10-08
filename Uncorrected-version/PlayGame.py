@@ -18,8 +18,8 @@ def playgame(game):
 		# sound effect gameover
 		game.sfx['gameover'].play()
 
-	# TODO add game over when time runs out in game, Limit Time is 1000
-	# game.seconds --> variable tracks time in game
+	# TODO add game over when time runs out in game, Limit Time is 30
+	# game.playtime --> variable tracks time in game
 
 	# Events with user input
 	# if pressed keys is left
@@ -45,7 +45,7 @@ def playgame(game):
 			game.sfx['laser'].play()
 
 	# TODO player can shoot with a different key, Key = 1
-	# Look at example above, which we can shoot with the space key
+	# Look at example above, we can shoot with the space key
 	# You can copy down code too!
 
 	# TODO create laser_damage variable with the value of 25
