@@ -14,6 +14,11 @@ Game is made with Python v.3 and above.
 ```
 python3 init.py
 ```
+## Feedback
+
+Please send me feedback on my course [here](https://docs.google.com/forms/d/e/1FAIpQLSckFWQMDsj8lHae6DSlrleB_Kwh5QbBrVSmyU1U_rYhWl6eJw/viewform).
+
+Thank you very much! :D
 
 ## Credits:
 Spaceship and OVNI sprites
